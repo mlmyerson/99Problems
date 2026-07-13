@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Weather and news aggregator icon">
+  <title>99 Problems – Weather &amp; News Aggregator</title>
+  <rect width="100" height="100" rx="20" fill="#1a6faf"/>
+  <text x="50" y="65" text-anchor="middle" font-size="55" font-family="system-ui,sans-serif">🌤️</text>
+</svg>

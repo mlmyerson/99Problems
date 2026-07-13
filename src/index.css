@@ -1,0 +1,426 @@
+/* ============================================================
+   99 Problems – Weather & News Aggregator
+   Mobile-first, accessible stylesheet
+   ============================================================ */
+
+/* ---------- CSS custom properties (design tokens) ---------- */
+:root {
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-primary: #1a6faf;
+  --color-primary-dark: #134f7e;
+  --color-accent: #e07b00;
+  --color-text: #1a1a2e;
+  --color-text-muted: #5a5a72;
+  --color-border: #d0d5dd;
+  --color-error: #c0392b;
+  --color-error-bg: #fdecea;
+  --color-success: #1a7f4b;
+  --color-success-bg: #eafaf1;
+  --color-warn: #856404;
+  --color-warn-bg: #fff3cd;
+  --radius: 0.75rem;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+  --focus-ring: 3px solid #1a6faf;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --transition: 0.18s ease;
+}
+
+/* ---------- Reset & base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Visible focus styles – no color-only signaling */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---------- Skip-to-content link ---------- */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 9999;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) 0;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ---------- Layout ---------- */
+.app-header {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+}
+
+.app-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.app-header p {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.app-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.app-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Toolbar (refresh + location) ---------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow);
+}
+
+.toolbar-info {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.toolbar-info strong {
+  color: var(--color-text);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  text-decoration: none;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---------- Section headings ---------- */
+.section-heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.section-heading .icon {
+  font-size: 1.2em;
+  /* decorative – aria-hidden set on element */
+}
+
+/* ---------- Cards ---------- */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.card-subtitle {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.card-meta {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+}
+
+/* ---------- Weather specific ---------- */
+.weather-temp {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+  margin: 0.25rem 0;
+}
+
+.weather-condition {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.weather-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.weather-detail-item {
+  background: var(--color-bg);
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.weather-detail-item span {
+  font-weight: 600;
+}
+
+/* ---------- News specific ---------- */
+.news-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.news-link:hover {
+  text-decoration: underline;
+  color: var(--color-primary-dark);
+}
+
+/* ---------- Source status badges ---------- */
+.source-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.source-status[data-status="ok"] {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid #a3d9b1;
+}
+
+.source-status[data-status="error"] {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid #f5c6cb;
+}
+
+.source-status[data-status="loading"] {
+  background: var(--color-warn-bg);
+  color: var(--color-warn);
+  border: 1px solid #ffc107;
+}
+
+.source-status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ---------- Status bar (per-source) ---------- */
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ---------- Loading & Error states ---------- */
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 0.4rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.alert-error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+  background: var(--color-warn-bg);
+  color: var(--color-warn);
+  border: 1px solid #ffc107;
+}
+
+/* ---------- Location section ---------- */
+.location-display {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.location-display strong {
+  color: var(--color-text);
+}
+
+/* ---------- News section specific ---------- */
+.news-source-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.news-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.news-sources-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ---------- Inline alert variant (toolbar) ---------- */
+.alert-inline {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.4rem;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ---------- Live region (aria-live) ---------- */
+.live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* ---------- Responsive: tablet+ ---------- */
+@media (min-width: 600px) {
+  .app-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .app-main {
+    padding: 1.5rem;
+  }
+}
