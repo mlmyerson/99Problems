@@ -80,7 +80,7 @@ function NewsList({ sourceKey, sourceData, heading }) {
 
   return (
     <div>
-      <h3 id={`news-heading-${sourceKey}`} className="card-subtitle" style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)' }}>
+      <h3 id={`news-heading-${sourceKey}`} className="news-source-heading">
         {heading}
       </h3>
       {sourceData.status === 'error' ? (
@@ -88,7 +88,7 @@ function NewsList({ sourceKey, sourceData, heading }) {
       ) : (
         <ol
           aria-labelledby={`news-heading-${sourceKey}`}
-          style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+          className="news-list"
         >
           {sourceData.data?.map((item) => (
             <NewsItem key={item.id} item={item} />
@@ -136,7 +136,7 @@ export default function NewsSection({ sources, loading, lastUpdated }) {
         </p>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <div className="news-sources-container">
         <NewsList sourceKey="hackerNews" sourceData={hackerNews} heading="Hacker News — Top Stories" />
         <NewsList sourceKey="wikipedia" sourceData={wikipedia} heading="Wikipedia — Current Events" />
       </div>

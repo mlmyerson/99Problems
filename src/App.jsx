@@ -134,8 +134,7 @@ export default function App() {
             )}
             {locationError && (
               <span
-                className="alert alert-info"
-                style={{ display: 'inline-block', marginLeft: '0.5rem', padding: '0.1rem 0.4rem' }}
+                className="alert alert-info alert-inline"
                 role="note"
                 aria-label={`Location note: ${locationError}`}
               >

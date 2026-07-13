@@ -357,7 +357,35 @@ body {
   color: var(--color-text);
 }
 
-/* ---------- Visually hidden (screen-reader only) ---------- */
+/* ---------- News section specific ---------- */
+.news-source-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.news-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.news-sources-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ---------- Inline alert variant (toolbar) ---------- */
+.alert-inline {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.4rem;
+}
 .sr-only {
   position: absolute;
   width: 1px;

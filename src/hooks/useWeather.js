@@ -110,7 +110,7 @@ async function fetchNWS(lat, lon) {
 }
 
 function degreesToCompass(deg) {
-  if (deg == null) return ''
+  if (deg === null || deg === undefined) return ''
   const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
   return dirs[Math.round(deg / 22.5) % 16]
 }
