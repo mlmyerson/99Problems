@@ -1,71 +1,91 @@
-# 99 Problems — Weather & News Aggregator
+# 99 Problems — Weather, Politics & Markets
 
-A **mobile-first, accessible** static site that aggregates weather data and news headlines from multiple free public APIs — no API keys required. Built with **React + Vite** and deployed to **GitHub Pages**.
-
----
-
-## Project Purpose
-
-This is a proof-of-concept data aggregation dashboard that:
-
-- Fetches current weather from **two independent sources** in parallel
-- Fetches tech/current-events news from **two independent sources** in parallel
-- Handles partial failures gracefully — if one source is down, data from the other still appears
-- Prioritizes **accessibility** so the site works with screen readers, keyboard navigation, and AI agents parsing the DOM
-- Works on **mobile phones** as the primary form factor
+A **mobile-first, accessible** static site that aggregates weather, politics news, and stock market data from multiple free public APIs — no API keys or accounts required. Built with **React + Vite** and deployed to **GitHub Pages**.
 
 ---
 
-## Chosen APIs and Rationale
+## Categories
 
-### Weather
+| Tab | Content | Data Sources |
+|-----|---------|-------------|
+| 🌤️ Weather | Current conditions + hourly forecast | Open-Meteo, NOAA/NWS |
+| 🏙️ Local Politics | Regional news relevant to your location | Reddit r/news, Reddit search |
+| 🇺🇸 American Politics | US political headlines | Reddit r/politics, r/uspolitics |
+| 🌍 World Politics | International news | Reddit r/worldnews, r/geopolitics |
+| 📈 Markets | Index/ETF quotes + market discussion | Yahoo Finance, Reddit r/stocks |
 
-| Source | URL | Why |
-|--------|-----|-----|
-| **Open-Meteo** | https://open-meteo.com | Global coverage, no API key, free tier, returns current conditions in a single request |
-| **NOAA/NWS** | https://api.weather.gov | Official US government forecast data, no API key, provides human-readable short forecasts |
+---
 
-**Limitations:** NOAA/NWS only covers US locations. Open-Meteo covers the whole world and will work as the sole weather source outside the US.
+## Location Permission & Default Behavior
 
-### News
+On first load, the app shows an accessible consent dialog asking whether to use your device location:
 
-| Source | URL | Why |
-|--------|-----|-----|
-| **Hacker News** | https://hacker.news (Firebase API) | Free, no API key, no CORS restrictions, tech/startup/science news |
-| **Wikipedia Current Events** | https://en.wikipedia.org/wiki/Portal:Current_events | Free, no API key, broad world news coverage |
+- **Allow** — the browser requests geolocation. If granted, your coordinates are used for location-sensitive sections (weather, local politics). If the browser itself denies access, the app silently falls back to Washington, D.C.
+- **Decline** — **Washington, D.C.** is used as the default for all location-based content.
+
+Your choice is **persisted in `localStorage`** so you are never prompted again. You can reset or change your preference at any time using the **Settings** button below the navigation bar.
+
+---
+
+## Data Sources & APIs
+
+All sources are free and require no API keys.
+
+| Source | Used For | Notes |
+|--------|----------|-------|
+| [Open-Meteo](https://open-meteo.com) | Current weather (global) | JSON REST, CORS-enabled |
+| [NOAA/NWS](https://api.weather.gov) | US hourly forecast | JSON REST, CORS-enabled; US-only |
+| [Reddit JSON API](https://www.reddit.com) | Politics news + market discussion | Public `.json` endpoints, no auth |
+| [Yahoo Finance](https://finance.yahoo.com) | Market quotes (SPY, QQQ, DIA, IWM, GLD, TLT) | Unofficial API; may be CORS-blocked in some environments |
+
+### Known Limitations & Fallback Behavior
+
+- **NOAA/NWS** only covers US locations. Non-US coordinates will return an error; Open-Meteo data is still shown.
+- **Yahoo Finance** market quotes may be blocked by CORS in some browsers or hosting environments. When unavailable, a clear notice is shown with a direct link to Yahoo Finance, and Reddit r/stocks discussion is still displayed.
+- **Reddit** may occasionally rate-limit rapid requests. The app retries on manual refresh.
+- **Local politics** search quality depends on how well the location name maps to Reddit content. Results may not always be perfectly local.
+- All fetch requests include a **10-second timeout**; a partial-failure error state is shown per source if a request times out.
+- Data is loaded **lazily per category** (only when you visit that tab) and cached for the session. Use the **Refresh** button to reload the active category.
+
+---
+
+## Accessibility Features
+
+- **Semantic landmarks**: `<header>`, `<nav>`, `<main>`, `<footer>` with ARIA roles.
+- **Heading hierarchy**: `h1` → `h2` (section) → `h3` (sub-heading), no skipped levels.
+- **ARIA tabs pattern**: `role="tablist"` / `role="tab"` / `role="tabpanel"` with `aria-selected`, `aria-controls`, and keyboard navigation (Arrow keys, Home, End).
+- **Accessible location dialog**: `role="dialog"` with `aria-modal`, `aria-labelledby`, `aria-describedby`; focus trapped inside; Escape blocked until user makes a choice.
+- **Live regions**: `aria-live="polite"` announces loading-start, load-complete, and refresh events without interrupting reading.
+- **Per-source status badges**: `role="status"` badges show loading/OK/error state in both text and a colored dot (never color-only).
+- **Error and info alerts**: `role="alert"` for errors; `role="note"` for informational messages.
+- **Skip link**: "Skip to main content" visible on focus for keyboard users.
+- **Visible focus rings**: All interactive elements have a 3px outline on `:focus-visible`.
+- **Touch targets**: Tab buttons and cards meet 44×44 px minimum.
+- **Contrast**: All foreground/background color pairings meet WCAG AA (4.5:1 minimum).
+- **Decorative icons**: All emoji used as decoration carry `aria-hidden="true"`.
+- **Change direction (stocks)**: Up/down is indicated by both ▲/▼ symbol and color — never color alone.
 
 ---
 
 ## Local Development
 
-### Prerequisites
-
-- Node.js 18+ and npm
-
-### Setup
+**Prerequisites**: Node.js 18+ and npm.
 
 ```bash
-# Clone the repo
-git clone https://github.com/mlmyerson/99Problems.git
-cd 99Problems
-
 # Install dependencies
 npm install
 
-# Start development server
+# Start development server (with HMR)
 npm run dev
+
+# Build for production (outputs to dist/)
+npm run build
+
+# Preview the production build locally
+npm run preview
 ```
 
 Open [http://localhost:5173/99Problems/](http://localhost:5173/99Problems/) in your browser.
-
-### Build for Production
-
-```bash
-npm run build
-# Output is in the dist/ directory
-
-npm run preview   # Preview the production build locally
-```
 
 ---
 
@@ -75,51 +95,20 @@ The site deploys automatically to GitHub Pages via GitHub Actions when changes a
 
 **Live URL:** `https://mlmyerson.github.io/99Problems/`
 
-### Setup Steps (one-time)
+### Setup (one-time)
 
-1. Go to **Settings → Pages** in the repository
-2. Set **Source** to **GitHub Actions**
-3. Push to `main` — the workflow at `.github/workflows/deploy.yml` will build and deploy automatically
+1. Go to **Settings → Pages** in the repository.
+2. Set **Source** to **GitHub Actions**.
+3. Push to `main` — the workflow at `.github/workflows/deploy.yml` builds and deploys automatically.
 
-The Vite config sets `base: '/99Problems/'` to ensure all asset paths resolve correctly under the project-page URL.
-
----
-
-## Accessibility Features
-
-| Feature | Implementation |
-|---------|----------------|
-| **Semantic landmarks** | `<header>`, `<main>`, `<section>`, `<footer>` with ARIA roles |
-| **Heading hierarchy** | `<h1>` site title → `<h2>` section headings → `<h3>` card titles |
-| **Screen-reader labels** | `aria-label` on all interactive controls and data cards |
-| **Live region announcements** | `aria-live="polite"` region announces loading, errors, and successful refreshes |
-| **Loading states** | `aria-busy="true"` on the refresh button while loading |
-| **Keyboard navigation** | Visible `:focus-visible` outline on all focusable elements |
-| **No color-only signaling** | Status badges use both color AND text labels AND dot indicators |
-| **Skip link** | "Skip to main content" link at top of page for keyboard users |
-| **Descriptive link text** | News links include `aria-label` clarifying the destination and "(opens in new tab)" |
-| **Semantic time elements** | `<time>` with `dateTime` ISO attribute for machine-readable timestamps |
-| **Alt text** | Decorative icons have `aria-hidden="true"`; meaningful images have descriptive labels |
-| **AI-parseable DOM** | All data rendered as semantic HTML text, no canvas or image-only content |
-
----
-
-## Known Limitations and Fallback Behavior
-
-- **NOAA/NWS weather** only covers US locations. Outside the US, the NWS card will show an error badge while Open-Meteo continues to display global data.
-- **Geolocation** requires browser permission. If denied, the app falls back to New York City as the default location and shows an informational notice.
-- **Wikipedia news** extracts are sometimes sparse or formatted oddly — this is a known limitation of using the summary endpoint as a news feed.
-- **Hacker News** reflects tech/startup/open-source community stories, not general world news.
-- **No caching** — every page load or manual refresh hits the APIs fresh. A future improvement would be to add `localStorage` caching with a TTL.
-- **No user-configurable location** — a future improvement would be a search box to look up any city.
+Vite is configured with `base: '/99Problems/'` in `vite.config.js` to ensure all asset paths resolve correctly under the project-page URL.
 
 ---
 
 ## Future Improvements
 
-- [ ] City search / location autocomplete
-- [ ] `localStorage` caching to reduce API calls
-- [ ] 7-day forecast display from Open-Meteo
-- [ ] Dark mode support
-- [ ] Additional news sources (e.g., RSS feed reader)
-- [ ] Progressive Web App (PWA) offline support
+- Reverse-geocode coordinates to a human-readable city name for better local-politics search quality.
+- Add a manual location entry field (city name input) as an alternative to browser geolocation.
+- Cache last-good data in `localStorage` so stale data is shown on load while a fresh fetch runs.
+- Add more market instruments (crypto, commodities) when reliable no-key APIs become available.
+- Progressive Web App (PWA) manifest for installability and offline support.

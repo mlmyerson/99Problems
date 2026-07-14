@@ -408,6 +408,236 @@ body {
   white-space: nowrap;
 }
 
+/* ---------- Category navigation (tablist) ---------- */
+.category-nav {
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.tab-list {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.tab-list::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  flex: 1 0 auto;
+  min-width: 64px;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition),
+    background var(--transition);
+  margin-bottom: -2px; /* Overlap the nav border-bottom */
+}
+
+.tab-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-bg);
+}
+
+.tab-btn[data-active='true'] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  background: var(--color-bg);
+}
+
+.tab-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* Show full label on wider screens, short label on narrow */
+.tab-label-full {
+  display: none;
+}
+
+.tab-label-short {
+  display: block;
+}
+
+/* ---------- Location permission dialog ---------- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  padding: 1.5rem;
+  max-width: 480px;
+  width: 100%;
+  outline: none;
+}
+
+.dialog-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dialog-desc {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  margin: 0 0 0.75rem;
+  line-height: 1.6;
+}
+
+.dialog-note {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1.25rem;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* ---------- Secondary button variant ---------- */
+.btn-secondary {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  background: var(--color-border);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+/* ---------- Toolbar: actions group ---------- */
+.toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ---------- Settings panel ---------- */
+.settings-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.settings-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.settings-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+/* ---------- Location note in politics sections ---------- */
+.location-note {
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+/* ---------- Stock market quote cards ---------- */
+.quote-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.quote-symbol {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.quote-name {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.quote-price {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin: 0.25rem 0 0;
+  line-height: 1;
+}
+
+.quote-change {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.change-positive {
+  color: var(--color-success);
+}
+
+.change-negative {
+  color: var(--color-error);
+}
+
+.market-note {
+  margin-top: 0.5rem;
+}
+
 /* ---------- Responsive: tablet+ ---------- */
 @media (min-width: 600px) {
   .app-header h1 {
@@ -417,10 +647,37 @@ body {
   .card-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Show full labels in tab bar on wider screens */
+  .tab-label-full {
+    display: block;
+  }
+
+  .tab-label-short {
+    display: none;
+  }
+
+  .tab-btn {
+    font-size: 0.8rem;
+    min-width: 80px;
+  }
+
+  .dialog-actions {
+    flex-direction: row;
+  }
+
+  .dialog-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
 @media (min-width: 900px) {
   .app-main {
     padding: 1.5rem;
+  }
+
+  .quote-card {
+    min-width: 0;
   }
 }
