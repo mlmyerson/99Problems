@@ -37,6 +37,7 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          # Keep Pages builds static-safe: do not inject server secrets into the frontend bundle.
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
