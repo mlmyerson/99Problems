@@ -1,6 +1,6 @@
 # 99 Problems — Weather & News Aggregator
 
-A **mobile-first, accessible** static site that aggregates weather data and news headlines from multiple free public APIs — no API keys required. Built with **React + Vite** and deployed to **GitHub Pages**.
+A **mobile-first, accessible** static site that aggregates weather data and news headlines from multiple free public APIs — no API keys required for the current frontend. Built with **React + Vite** and deployed to **GitHub Pages**.
 
 ---
 
@@ -52,11 +52,34 @@ cd 99Problems
 # Install dependencies
 npm install
 
+# Optional: copy the env template for local-only configuration
+cp .env.example .env
+
 # Start development server
 npm run dev
 ```
 
 Open [http://localhost:5173/99Problems/](http://localhost:5173/99Problems/) in your browser.
+
+### Environment Configuration
+
+Use `.env.example` as the starting point for local configuration and keep your real `.env` file uncommitted.
+
+#### Server-only secrets
+
+- `OPENAI_API_KEY` is reserved for **server-side** use only.
+- Never import it into Vite client code.
+- Never rename it to `VITE_OPENAI_API_KEY`.
+- A static GitHub Pages frontend cannot safely call OpenAI directly with a secret key, because any client-side secret would be exposed to every browser.
+
+#### Public Vite variables
+
+Only `VITE_` variables are exposed to the browser bundle. In this repository they are limited to safe, non-secret configuration such as:
+
+- `VITE_OPENAI_PROXY_URL` — optional public URL for a future backend or serverless proxy
+- `VITE_ENABLE_OPENAI_UI` — optional public feature flag
+
+The client config guard in `src/config/publicEnv.js` throws if `VITE_OPENAI_API_KEY` is ever set, which helps prevent accidental secret exposure.
 
 ### Build for Production
 
@@ -82,6 +105,22 @@ The site deploys automatically to GitHub Pages via GitHub Actions when changes a
 3. Push to `main` — the workflow at `.github/workflows/deploy.yml` will build and deploy automatically
 
 The Vite config sets `base: '/99Problems/'` to ensure all asset paths resolve correctly under the project-page URL.
+
+### GitHub Secrets Setup
+
+1. Go to **Settings → Secrets and variables → Actions**
+2. Choose **New repository secret**
+3. Add `OPENAI_API_KEY`
+4. Run the **Secret readiness check** workflow in **Actions** to verify the secret is available to server-side jobs without printing its value
+
+The GitHub Pages deploy workflow intentionally does **not** inject `OPENAI_API_KEY` into the static frontend build. Keep `${{ secrets.OPENAI_API_KEY }}` limited to CI or backend/serverless contexts only.
+
+### Maintainer checklist
+
+- [ ] Add `OPENAI_API_KEY` in GitHub repository **Secrets and variables → Actions**
+- [ ] Keep `.env` files local only; do not commit them
+- [ ] Do not add `VITE_OPENAI_API_KEY` or any other secret-bearing `VITE_` variable
+- [ ] If OpenAI features are added later, route browser traffic through a secure backend or serverless proxy
 
 ---
 
@@ -123,3 +162,4 @@ The Vite config sets `base: '/99Problems/'` to ensure all asset paths resolve co
 - [ ] Dark mode support
 - [ ] Additional news sources (e.g., RSS feed reader)
 - [ ] Progressive Web App (PWA) offline support
+- [ ] Secure OpenAI integration via serverless function or backend proxy using `OPENAI_API_KEY` server-side only
