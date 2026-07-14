@@ -81,7 +81,7 @@ export default function LocationPermissionDialog({ onAllow, onDecline, isRequest
         </p>
 
         <p className="dialog-desc">
-          If you prefer not to share, we&apos;ll use{' '}
+          If you prefer not to share, we&rsquo;ll use{' '}
           <strong>Washington, D.C.</strong> as the default for all location-based content.
         </p>
 

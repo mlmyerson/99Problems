@@ -20,6 +20,19 @@ import StockMarketSection from './components/StockMarketSection.jsx'
 import CategoryNav, { CATEGORIES } from './components/CategoryNav.jsx'
 import LocationPermissionDialog from './components/LocationPermissionDialog.jsx'
 
+function getLocationPreferenceLabel(loc) {
+  if (loc.choice === 'declined') {
+    return 'Using Washington, D.C. (location sharing declined)'
+  }
+  if (loc.choice === 'allowed' && loc.browserDenied) {
+    return 'Location sharing allowed, but your browser denied access. Using Washington, D.C.'
+  }
+  if (loc.choice === 'allowed') {
+    return `Using your device location (${loc.locationName})`
+  }
+  return 'Not yet set'
+}
+
 export default function App() {
   const loc = useLocation()
   const [activeCategory, setActiveCategory] = useState('weather')
@@ -233,13 +246,7 @@ export default function App() {
             </h3>
             <p className="settings-desc">
               <strong>Current preference: </strong>
-              {loc.choice === 'declined'
-                ? 'Using Washington, D.C. (location sharing declined)'
-                : loc.choice === 'allowed' && loc.browserDenied
-                  ? 'Location sharing allowed, but your browser denied access. Using Washington, D.C.'
-                  : loc.choice === 'allowed'
-                    ? `Using your device location (${loc.locationName})`
-                    : 'Not yet set'}
+              {getLocationPreferenceLabel(loc)}
             </p>
             <button className="btn btn-secondary" onClick={handleResetLocation}>
               <span aria-hidden="true">🔄</span>
