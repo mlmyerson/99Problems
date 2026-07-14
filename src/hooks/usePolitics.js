@@ -76,10 +76,12 @@ export function usePolitics(category) {
   /**
    * @param {number} [lat]
    * @param {number} [lon]
-   * @param {string} [locationName] - Human-readable location name for local searches.
+   * @param {string} [cityName] - Plain city/region name for local searches (e.g. "Washington DC").
+   *                              Passed separately from the formatted locationName label to avoid
+   *                              brittle string parsing.
    */
   const fetchAll = useCallback(
-    async (lat, lon, locationName) => {
+    async (lat, lon, cityName) => {
       setLoading(true)
 
       let primaryFetch, secondaryFetch
@@ -96,14 +98,12 @@ export function usePolitics(category) {
         primaryFetch = fetchSubreddit('worldnews')
         secondaryFetch = fetchSubreddit('geopolitics')
       } else {
-        // local — search Reddit using the location name
-        const cityQuery = locationName
-          ? locationName.split('(')[0].replace(/[°NEWSnsew\d.,]/g, '').trim() || 'Washington DC'
-          : 'Washington DC'
+        // local — use the provided city name directly (no regex parsing needed)
+        const searchQuery = cityName || 'Washington DC'
         primaryName = 'r/news (US local)'
-        secondaryName = `search: "${cityQuery} politics"`
+        secondaryName = `search: "${searchQuery} politics"`
         primaryFetch = fetchSubreddit('news')
-        secondaryFetch = fetchRedditSearch(`${cityQuery} local politics`)
+        secondaryFetch = fetchRedditSearch(`${searchQuery} local politics`)
       }
 
       setSources({

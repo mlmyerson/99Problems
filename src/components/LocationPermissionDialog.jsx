@@ -56,11 +56,6 @@ export default function LocationPermissionDialog({ onAllow, onDecline, isRequest
 
   return (
     <div className="dialog-backdrop" aria-hidden="false">
-      {/* aria-live region so screen readers announce request-in-progress state */}
-      <div aria-live="polite" aria-atomic="true" className="live-region">
-        {isRequesting ? 'Requesting your device location, please wait…' : ''}
-      </div>
-
       <div
         ref={dialogRef}
         role="dialog"
@@ -70,6 +65,11 @@ export default function LocationPermissionDialog({ onAllow, onDecline, isRequest
         className="dialog"
         onKeyDown={handleKeyDown}
       >
+        {/* aria-live region inside the dialog so announcements are scoped to it */}
+        <div aria-live="polite" aria-atomic="true" className="live-region">
+          {isRequesting ? 'Requesting your device location, please wait…' : ''}
+        </div>
+
         <h2 id="location-dialog-title" className="dialog-title">
           <span aria-hidden="true">📍</span> Share your location?
         </h2>

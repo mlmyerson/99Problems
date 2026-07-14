@@ -46,41 +46,51 @@ export default function App() {
   const worldPolitics = usePolitics('world')
   const stocks = useStocks()
 
-  // Keep stable refs to each fetchAll so the auto-fetch effect doesn't re-run
-  // every render due to stale-closure warnings from eslint-plugin-react-hooks.
-  const fetchRefs = useRef({})
-  fetchRefs.current = {
-    weather: weather.fetchAll,
-    local: localPolitics.fetchAll,
-    american: americanPolitics.fetchAll,
-    world: worldPolitics.fetchAll,
-    stocks: stocks.fetchAll,
-  }
+  // Derive a plain city name from the location for local-politics searches.
+  // locationName may look like "38.90°N, 77.04°W (America/New_York)" or "Washington, D.C."
+  // We strip coordinate patterns and timezone to get a usable search term.
+  const cityName = loc.choice === 'declined'
+    ? 'Washington DC'
+    : loc.locationName.replace(/\s*\([^)]*\)$/, '').replace(/[\d.°NSEW,\s]+/, '').trim() || 'Washington DC'
 
   // Track which (category + location) keys have already been fetched
   const fetchedRef = useRef(new Set())
 
   // Derive a cache key for the active category
-  const cacheKey = (catId) =>
-    catId === 'weather' || catId === 'local'
-      ? `${catId}::${loc.lat}::${loc.lon}`
-      : catId
+  const getCacheKey = useCallback(
+    (catId) =>
+      catId === 'weather' || catId === 'local'
+        ? `${catId}::${loc.lat}::${loc.lon}`
+        : catId,
+    [loc.lat, loc.lon],
+  )
 
   // Auto-fetch the active category on first visit (after location resolves)
   useEffect(() => {
     if (loc.needsPermission || loc.isRequestingLocation) return
-    const key = cacheKey(activeCategory)
+    const key = getCacheKey(activeCategory)
     if (fetchedRef.current.has(key)) return
     fetchedRef.current.add(key)
 
-    const fn = fetchRefs.current[activeCategory]
-    if (!fn) return
-
-    if (activeCategory === 'weather') fn(loc.lat, loc.lon)
-    else if (activeCategory === 'local') fn(loc.lat, loc.lon, loc.locationName)
-    else fn()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory, loc.needsPermission, loc.isRequestingLocation, loc.lat, loc.lon])
+    if (activeCategory === 'weather') weather.fetchAll(loc.lat, loc.lon)
+    else if (activeCategory === 'local') localPolitics.fetchAll(loc.lat, loc.lon, cityName)
+    else if (activeCategory === 'american') americanPolitics.fetchAll()
+    else if (activeCategory === 'world') worldPolitics.fetchAll()
+    else if (activeCategory === 'stocks') stocks.fetchAll()
+  }, [
+    activeCategory,
+    cityName,
+    getCacheKey,
+    loc.needsPermission,
+    loc.isRequestingLocation,
+    loc.lat,
+    loc.lon,
+    weather.fetchAll,
+    localPolitics.fetchAll,
+    americanPolitics.fetchAll,
+    worldPolitics.fetchAll,
+    stocks.fetchAll,
+  ])
 
   // Announce when the active section finishes loading
   const loadingMap = {
@@ -104,12 +114,22 @@ export default function App() {
     const label = CATEGORIES.find((c) => c.id === activeCategory)?.label ?? 'Data'
     setAnnounceMsg(`Refreshing ${label}…`)
 
-    const fn = fetchRefs.current[activeCategory]
-    if (!fn) return
-    if (activeCategory === 'weather') fn(loc.lat, loc.lon)
-    else if (activeCategory === 'local') fn(loc.lat, loc.lon, loc.locationName)
-    else fn()
-  }, [activeCategory, loc.lat, loc.lon, loc.locationName])
+    if (activeCategory === 'weather') weather.fetchAll(loc.lat, loc.lon)
+    else if (activeCategory === 'local') localPolitics.fetchAll(loc.lat, loc.lon, cityName)
+    else if (activeCategory === 'american') americanPolitics.fetchAll()
+    else if (activeCategory === 'world') worldPolitics.fetchAll()
+    else if (activeCategory === 'stocks') stocks.fetchAll()
+  }, [
+    activeCategory,
+    cityName,
+    loc.lat,
+    loc.lon,
+    weather.fetchAll,
+    localPolitics.fetchAll,
+    americanPolitics.fetchAll,
+    worldPolitics.fetchAll,
+    stocks.fetchAll,
+  ])
 
   const handleCategoryChange = (catId) => {
     setActiveCategory(catId)

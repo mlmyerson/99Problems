@@ -66,11 +66,11 @@ export default function CategoryNav({ active, onChange }) {
               <span className="tab-icon" aria-hidden="true">
                 {cat.icon}
               </span>
-              {/* Full label for wider screens, short label for narrow */}
+              {/* Full label visible on wider screens; short label on narrow.
+                  Both use display:none to toggle — CSS removes from a11y tree when hidden.
+                  Neither needs aria-hidden since display:none handles it correctly. */}
               <span className="tab-label-full">{cat.label}</span>
-              <span className="tab-label-short" aria-hidden="true">
-                {cat.shortLabel}
-              </span>
+              <span className="tab-label-short">{cat.shortLabel}</span>
             </button>
           )
         })}
