@@ -1,108 +1,166 @@
 /**
- * App – Root component for the 99 Problems Weather & News Aggregator.
+ * App – Root component for 99 Problems Aggregator.
  *
  * Responsibilities:
- *  - Detect user's geolocation (with permission)
- *  - Trigger parallel fetches for weather and news on load and on manual refresh
- *  - Render accessible layout with semantic landmarks
- *  - Announce state changes via aria-live regions
+ *  - Location permission flow: first-visit consent dialog → persist choice
+ *  - Category navigation: Weather / Local Politics / US Politics / World Politics / Markets
+ *  - Lazy per-category data fetching (fetch on first tab visit, re-fetch on Refresh)
+ *  - Global aria-live announcements for loading/error/refresh events
+ *  - Settings panel to reset/change location preference
  */
 
-import { useEffect, useCallback, useState, useRef } from 'react'
-import WeatherSection from './components/WeatherSection.jsx'
-import NewsSection from './components/NewsSection.jsx'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { useLocation } from './hooks/useLocation.js'
 import { useWeather } from './hooks/useWeather.js'
-import { useNews } from './hooks/useNews.js'
+import { usePolitics } from './hooks/usePolitics.js'
+import { useStocks } from './hooks/useStocks.js'
+import WeatherSection from './components/WeatherSection.jsx'
+import PoliticsSection from './components/PoliticsSection.jsx'
+import StockMarketSection from './components/StockMarketSection.jsx'
+import CategoryNav, { CATEGORIES } from './components/CategoryNav.jsx'
+import LocationPermissionDialog from './components/LocationPermissionDialog.jsx'
 
-// Default location: New York City (fallback when geolocation is unavailable/denied)
-const DEFAULT_LAT = 40.7128
-const DEFAULT_LON = -74.006
-const DEFAULT_LOCATION_NAME = 'New York City (default)'
-
-function useGeolocation() {
-  const [location, setLocation] = useState(null)
-  const [locationName, setLocationName] = useState(null)
-  const [locationError, setLocationError] = useState(null)
-  const [locationLoading, setLocationLoading] = useState(true)
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocation({ lat: DEFAULT_LAT, lon: DEFAULT_LON })
-      setLocationName(DEFAULT_LOCATION_NAME)
-      setLocationError('Geolocation not supported; using default location.')
-      setLocationLoading(false)
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude
-        const lon = pos.coords.longitude
-        setLocation({ lat, lon })
-        // Reverse-geocode via Open-Meteo timezone endpoint (no key needed)
-        try {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-          setLocationName(`${lat.toFixed(2)}°, ${lon.toFixed(2)}° (${tz})`)
-        } catch {
-          setLocationName(`${lat.toFixed(2)}°, ${lon.toFixed(2)}°`)
-        }
-        setLocationLoading(false)
-      },
-      (err) => {
-        setLocation({ lat: DEFAULT_LAT, lon: DEFAULT_LON })
-        setLocationName(DEFAULT_LOCATION_NAME)
-        setLocationError(`Location access denied. Using default location. (${err.message})`)
-        setLocationLoading(false)
-      },
-      { timeout: 8000, enableHighAccuracy: false }
-    )
-  }, [])
-
-  return { location, locationName, locationError, locationLoading }
+function getLocationPreferenceLabel(loc) {
+  if (loc.choice === 'declined') {
+    return 'Using Washington, D.C. (location sharing declined)'
+  }
+  if (loc.choice === 'allowed' && loc.browserDenied) {
+    return 'Location sharing allowed, but your browser denied access. Using Washington, D.C.'
+  }
+  if (loc.choice === 'allowed') {
+    return `Using your device location (${loc.locationName})`
+  }
+  return 'Not yet set'
 }
 
 export default function App() {
-  const { location, locationName, locationError, locationLoading } = useGeolocation()
-  const { sources: weatherSources, lastUpdated: weatherUpdated, loading: weatherLoading, fetchAll: fetchWeather } = useWeather()
-  const { sources: newsSources, lastUpdated: newsUpdated, loading: newsLoading, fetchAll: fetchNews } = useNews()
+  const loc = useLocation()
+  const [activeCategory, setActiveCategory] = useState('weather')
   const [announceMsg, setAnnounceMsg] = useState('')
-  const initialFetchDone = useRef(false)
+  const [showSettings, setShowSettings] = useState(false)
 
-  const doRefresh = useCallback(
-    (lat, lon) => {
-      setAnnounceMsg('Refreshing weather and news data…')
-      fetchWeather(lat, lon)
-      fetchNews()
-    },
-    [fetchWeather, fetchNews]
+  // Data hooks (one per category)
+  const weather = useWeather()
+  const localPolitics = usePolitics('local')
+  const americanPolitics = usePolitics('american')
+  const worldPolitics = usePolitics('world')
+  const stocks = useStocks()
+
+  // Derive a plain city name from the location for local-politics searches.
+  // locationName may look like "38.90°N, 77.04°W (America/New_York)" or "Washington, D.C."
+  // We strip coordinate patterns and timezone to get a usable search term.
+  const cityName = loc.choice === 'declined'
+    ? 'Washington DC'
+    : loc.locationName.replace(/\s*\([^)]*\)$/, '').replace(/[\d.°NSEW,\s]+/, '').trim() || 'Washington DC'
+
+  // Track which (category + location) keys have already been fetched
+  const fetchedRef = useRef(new Set())
+
+  // Derive a cache key for the active category
+  const getCacheKey = useCallback(
+    (catId) =>
+      catId === 'weather' || catId === 'local'
+        ? `${catId}::${loc.lat}::${loc.lon}`
+        : catId,
+    [loc.lat, loc.lon],
   )
 
-  // Initial fetch once location is resolved
+  // Auto-fetch the active category on first visit (after location resolves)
   useEffect(() => {
-    if (location && !initialFetchDone.current) {
-      initialFetchDone.current = true
-      doRefresh(location.lat, location.lon)
-    }
-  }, [location, doRefresh])
+    if (loc.needsPermission || loc.isRequestingLocation) return
+    const key = getCacheKey(activeCategory)
+    if (fetchedRef.current.has(key)) return
+    fetchedRef.current.add(key)
 
-  // Announce when both fetches complete
+    if (activeCategory === 'weather') weather.fetchAll(loc.lat, loc.lon)
+    else if (activeCategory === 'local') localPolitics.fetchAll(loc.lat, loc.lon, cityName)
+    else if (activeCategory === 'american') americanPolitics.fetchAll()
+    else if (activeCategory === 'world') worldPolitics.fetchAll()
+    else if (activeCategory === 'stocks') stocks.fetchAll()
+  }, [
+    activeCategory,
+    cityName,
+    getCacheKey,
+    loc.needsPermission,
+    loc.isRequestingLocation,
+    loc.lat,
+    loc.lon,
+    weather.fetchAll,
+    localPolitics.fetchAll,
+    americanPolitics.fetchAll,
+    worldPolitics.fetchAll,
+    stocks.fetchAll,
+  ])
+
+  // Announce when the active section finishes loading
+  const loadingMap = {
+    weather: weather.loading,
+    local: localPolitics.loading,
+    american: americanPolitics.loading,
+    world: worldPolitics.loading,
+    stocks: stocks.loading,
+  }
+  const isLoading = loadingMap[activeCategory] ?? false
+  const prevLoadingRef = useRef(false)
   useEffect(() => {
-    if (!weatherLoading && !newsLoading && (weatherUpdated || newsUpdated)) {
-      setAnnounceMsg('Weather and news data updated successfully.')
+    if (prevLoadingRef.current && !isLoading) {
+      const label = CATEGORIES.find((c) => c.id === activeCategory)?.label ?? 'Data'
+      setAnnounceMsg(`${label} updated.`)
     }
-  }, [weatherLoading, newsLoading, weatherUpdated, newsUpdated])
+    prevLoadingRef.current = isLoading
+  }, [isLoading, activeCategory])
 
-  const isRefreshing = weatherLoading || newsLoading
+  const handleRefresh = useCallback(() => {
+    const label = CATEGORIES.find((c) => c.id === activeCategory)?.label ?? 'Data'
+    setAnnounceMsg(`Refreshing ${label}…`)
+
+    if (activeCategory === 'weather') weather.fetchAll(loc.lat, loc.lon)
+    else if (activeCategory === 'local') localPolitics.fetchAll(loc.lat, loc.lon, cityName)
+    else if (activeCategory === 'american') americanPolitics.fetchAll()
+    else if (activeCategory === 'world') worldPolitics.fetchAll()
+    else if (activeCategory === 'stocks') stocks.fetchAll()
+  }, [
+    activeCategory,
+    cityName,
+    loc.lat,
+    loc.lon,
+    weather.fetchAll,
+    localPolitics.fetchAll,
+    americanPolitics.fetchAll,
+    worldPolitics.fetchAll,
+    stocks.fetchAll,
+  ])
+
+  const handleCategoryChange = (catId) => {
+    setActiveCategory(catId)
+    // Move focus into the panel for keyboard/screen-reader users
+    requestAnimationFrame(() => {
+      document.getElementById(`panel-${catId}`)?.focus()
+    })
+  }
+
+  const handleResetLocation = () => {
+    loc.resetLocation()
+    setShowSettings(false)
+    // Clear fetch cache so data re-loads with the new location after dialog
+    fetchedRef.current.clear()
+  }
+
   const currentYear = new Date().getFullYear()
+
+  const localNote =
+    loc.choice === 'declined'
+      ? 'Showing news for Washington, D.C. (default). Allow location sharing in Settings for local results.'
+      : `Showing news relevant to: ${loc.locationName}`
 
   return (
     <>
-      {/* Skip-to-content for keyboard users */}
+      {/* Skip-to-content link for keyboard users */}
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
 
-      {/* Accessible live region for screen reader announcements */}
+      {/* Global aria-live region for screen-reader announcements */}
       <div
         className="live-region"
         aria-live="polite"
@@ -112,16 +170,28 @@ export default function App() {
         {announceMsg}
       </div>
 
+      {/* Location permission dialog (shown on first visit only) */}
+      {(loc.needsPermission || loc.isRequestingLocation) && (
+        <LocationPermissionDialog
+          onAllow={loc.allowLocation}
+          onDecline={loc.declineLocation}
+          isRequesting={loc.isRequestingLocation}
+        />
+      )}
+
       <header className="app-header" role="banner">
-        <h1>99 Problems — Weather &amp; News</h1>
-        <p>Aggregating public data from multiple free APIs</p>
+        <h1>99 Problems</h1>
+        <p>Weather, politics &amp; markets — free public data, no accounts needed</p>
       </header>
 
-      <main id="main-content" className="app-main" role="main">
-        {/* Toolbar: location info + refresh button */}
+      {/* Category tab navigation */}
+      <CategoryNav active={activeCategory} onChange={handleCategoryChange} />
+
+      <main id="main-content" className="app-main" role="main" tabIndex={-1}>
+        {/* Toolbar: location info + settings + refresh */}
         <div className="toolbar" role="region" aria-label="Controls and status">
           <div className="toolbar-info">
-            {locationLoading ? (
+            {loc.isRequestingLocation ? (
               <span>
                 <span className="loading-spinner" aria-hidden="true" />
                 Detecting location…
@@ -129,54 +199,166 @@ export default function App() {
             ) : (
               <span className="location-display">
                 <strong>Location: </strong>
-                <span aria-label={`Current location: ${locationName}`}>{locationName}</span>
+                <span aria-label={`Current location: ${loc.locationName}`}>
+                  {loc.locationName}
+                </span>
               </span>
             )}
-            {locationError && (
+            {loc.browserDenied && (
               <span
                 className="alert alert-info alert-inline"
                 role="note"
-                aria-label={`Location note: ${locationError}`}
+                aria-label="Browser location access denied; using default location"
               >
-                ℹ️ {locationError}
+                ℹ️ Browser access denied; using default
               </span>
             )}
           </div>
 
-          <button
-            className="btn btn-primary"
-            onClick={() => location && doRefresh(location.lat, location.lon)}
-            disabled={isRefreshing || locationLoading}
-            aria-busy={isRefreshing}
-            aria-label={isRefreshing ? 'Refreshing data, please wait' : 'Refresh weather and news data'}
-          >
-            {isRefreshing ? (
-              <>
-                <span className="loading-spinner" aria-hidden="true" />
-                Refreshing…
-              </>
-            ) : (
-              <>
-                <span aria-hidden="true">🔄</span>
-                Refresh
-              </>
-            )}
-          </button>
+          <div className="toolbar-actions">
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setShowSettings((s) => !s)}
+              aria-expanded={showSettings}
+              aria-controls="location-settings"
+              aria-label={showSettings ? 'Close settings' : 'Open location settings'}
+            >
+              <span aria-hidden="true">⚙️</span>
+              <span>Settings</span>
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={handleRefresh}
+              disabled={isLoading || loc.needsPermission || loc.isRequestingLocation}
+              aria-busy={isLoading}
+              aria-label={
+                isLoading
+                  ? 'Refreshing data, please wait'
+                  : `Refresh ${CATEGORIES.find((c) => c.id === activeCategory)?.label ?? 'data'}`
+              }
+            >
+              {isLoading ? (
+                <>
+                  <span className="loading-spinner" aria-hidden="true" />
+                  Refreshing…
+                </>
+              ) : (
+                <>
+                  <span aria-hidden="true">🔄</span>
+                  Refresh
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Weather Section */}
-        <WeatherSection
-          sources={weatherSources}
-          loading={weatherLoading}
-          lastUpdated={weatherUpdated}
-        />
+        {/* Settings panel */}
+        {showSettings && (
+          <div
+            id="location-settings"
+            className="settings-panel"
+            role="region"
+            aria-label="Location settings"
+          >
+            <h3 className="settings-title">
+              <span aria-hidden="true">⚙️</span> Location Settings
+            </h3>
+            <p className="settings-desc">
+              <strong>Current preference: </strong>
+              {getLocationPreferenceLabel(loc)}
+            </p>
+            <button className="btn btn-secondary" onClick={handleResetLocation}>
+              <span aria-hidden="true">🔄</span>
+              Change location preference
+            </button>
+          </div>
+        )}
 
-        {/* News Section */}
-        <NewsSection
-          sources={newsSources}
-          loading={newsLoading}
-          lastUpdated={newsUpdated}
-        />
+        {/*
+         * Category panels — all rendered in the DOM; only the active one is visible.
+         * Using `hidden` attribute keeps inactive panels out of the accessibility tree
+         * while preserving their mounted state (no unmount/remount on tab switch).
+         */}
+        <div
+          id="panel-weather"
+          role="tabpanel"
+          aria-labelledby="tab-weather"
+          hidden={activeCategory !== 'weather'}
+          tabIndex={-1}
+        >
+          <WeatherSection
+            sources={weather.sources}
+            loading={weather.loading}
+            lastUpdated={weather.lastUpdated}
+          />
+        </div>
+
+        <div
+          id="panel-local"
+          role="tabpanel"
+          aria-labelledby="tab-local"
+          hidden={activeCategory !== 'local'}
+          tabIndex={-1}
+        >
+          <PoliticsSection
+            sources={localPolitics.sources}
+            loading={localPolitics.loading}
+            lastUpdated={localPolitics.lastUpdated}
+            headingId="local-politics-heading"
+            title="Local Politics"
+            icon="🏙️"
+            locationNote={localNote}
+          />
+        </div>
+
+        <div
+          id="panel-american"
+          role="tabpanel"
+          aria-labelledby="tab-american"
+          hidden={activeCategory !== 'american'}
+          tabIndex={-1}
+        >
+          <PoliticsSection
+            sources={americanPolitics.sources}
+            loading={americanPolitics.loading}
+            lastUpdated={americanPolitics.lastUpdated}
+            headingId="american-politics-heading"
+            title="American Politics"
+            icon="🇺🇸"
+          />
+        </div>
+
+        <div
+          id="panel-world"
+          role="tabpanel"
+          aria-labelledby="tab-world"
+          hidden={activeCategory !== 'world'}
+          tabIndex={-1}
+        >
+          <PoliticsSection
+            sources={worldPolitics.sources}
+            loading={worldPolitics.loading}
+            lastUpdated={worldPolitics.lastUpdated}
+            headingId="world-politics-heading"
+            title="World Politics"
+            icon="🌍"
+          />
+        </div>
+
+        <div
+          id="panel-stocks"
+          role="tabpanel"
+          aria-labelledby="tab-stocks"
+          hidden={activeCategory !== 'stocks'}
+          tabIndex={-1}
+        >
+          <StockMarketSection
+            sources={stocks.sources}
+            loading={stocks.loading}
+            lastUpdated={stocks.lastUpdated}
+          />
+        </div>
       </main>
 
       <footer className="app-footer" role="contentinfo">
@@ -190,14 +372,14 @@ export default function App() {
             NOAA/NWS
           </a>
           ,{' '}
-          <a href="https://news.ycombinator.com" target="_blank" rel="noopener noreferrer">
-            Hacker News
+          <a href="https://www.reddit.com" target="_blank" rel="noopener noreferrer">
+            Reddit
           </a>
           , and{' '}
-          <a href="https://en.wikipedia.org/wiki/Portal:Current_events" target="_blank" rel="noopener noreferrer">
-            Wikipedia
+          <a href="https://finance.yahoo.com" target="_blank" rel="noopener noreferrer">
+            Yahoo Finance
           </a>
-          . All free public APIs. No API keys required.
+          . All free public sources. No API keys or accounts required.
         </p>
         <p>© {currentYear} 99 Problems Aggregator</p>
       </footer>
